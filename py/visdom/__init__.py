@@ -6,6 +6,8 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
+from xml.parsers.expat import model
+
 from visdom.utils.shared_utils import get_new_window_id
 from visdom import server
 import os.path
@@ -1109,6 +1111,33 @@ class Visdom(object):
             )
         except ImportError:
             raise RuntimeError("Plotly must be installed to plot Plotly figures")
+    #lo gradient norm for a model, averaged over all parameters. Logs to a line plot with win name "gradient_norm" by default, and also returns the value.
+    def log_gradient_norm(self, model, step, win="gradient_norm"):
+   
+        total_norm = 0.0
+
+        for param in model.parameters():
+
+            if param.grad is not None:
+
+                param_norm = param.grad.data.norm(2)
+
+                total_norm += param_norm.item() ** 2
+
+
+        total_norm = total_norm ** 0.5
+
+
+        self.line(
+            Y=[total_norm],
+            X=[step],
+            win=win,
+            update="append",
+            opts=dict(title="Gradient Norm")
+        )
+
+
+        return total_norm
 
     def _register_embeddings(
         self, features, labels, points, data_getter, data_type, win, env, opts
