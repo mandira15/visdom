@@ -1112,20 +1112,23 @@ class Visdom(object):
         except ImportError:
             raise RuntimeError("Plotly must be installed to plot Plotly figures")
     #lo gradient norm for a model, averaged over all parameters. Logs to a line plot with win name "gradient_norm" by default, and also returns the value.
-    def log_gradient_norm(self, model, step, win="gradient_norm"):
-   
+    def log_gradient_norm(self, model, step, win="gradient_norm", env = None, opts= None):
+
         total_norm = 0.0
+
+        total_norm = torch.zeros(1, device=next(model.parameters()).device)
 
         for param in model.parameters():
 
             if param.grad is not None:
 
-                param_norm = param.grad.data.norm(2)
+                total_norm += param.grad.norm(2).pow(2)
 
-                total_norm += param_norm.item() ** 2
-
+        total_norm = total_norm.sqrt()
 
         total_norm = total_norm ** 0.5
+        if opts is None:
+            opts = dict(title=win)
 
 
         self.line(
@@ -1133,7 +1136,7 @@ class Visdom(object):
             X=[step],
             win=win,
             update="append",
-            opts=dict(title="Gradient Norm")
+            opts=opts
         )
 
 

@@ -1,5 +1,4 @@
-import sys
-sys.path.insert(0, r"A:\FOSSASIA\visdom\py")
+
 
 import torch
 import torch.nn as nn
