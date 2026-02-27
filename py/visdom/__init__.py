@@ -6,6 +6,10 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
+from xml.parsers.expat import model
+
+from torch import device
+
 from visdom.utils.shared_utils import get_new_window_id
 from visdom import server
 import os.path
@@ -1730,6 +1734,32 @@ class Visdom(object):
             endpoint = "update"
 
         return self._send(data_to_send, endpoint=endpoint)
+
+    def compute_gradient_l2_norm(model):
+    # """
+    # Compute the global L2 norm of all gradients in a PyTorch model.
+
+    # Args:
+    #     model (torch.nn.Module): Model whose gradients are computed.
+
+    # Returns:
+    #     float: L2 norm of gradients.
+    # """
+        import torch
+        parameters = list(model.parameters())
+        if len(parameters) == 0:
+            return 0.0
+
+        device = parameters[0].device
+        total_norm = torch.zeros(1, device=device)
+
+        for param in parameters:
+            if param.grad is not None:
+                param_norm = param.grad.detach().norm(2)
+                total_norm += param_norm.pow(2)
+
+        total_norm = total_norm.sqrt()
+        return total_norm.item()
 
     @pytorch_wrap
     def line(self, Y, X=None, win=None, env=None, opts=None, update=None, name=None):
