@@ -1750,16 +1750,17 @@ class Visdom(object):
         if len(parameters) == 0:
             return 0.0
 
-        device = parameters[0].device
-        total_norm = torch.zeros(1, device=device)
+        # Accumulate on CPU to safely support mixed-device setups
+        total_norm_sq = 0.0
 
         for param in parameters:
             if param.grad is not None:
-                param_norm = param.grad.detach().norm(2)
-                total_norm += param_norm.pow(2)
+                # Compute norm on its device, move scalar to CPU
+                param_norm = param.grad.detach().norm(2).item()
+                total_norm_sq += param_norm ** 2
 
-        total_norm = total_norm.sqrt()
-        return total_norm.item()
+        total_norm = total_norm_sq ** 0.5
+        return float(total_norm)
 
     @pytorch_wrap
     def line(self, Y, X=None, win=None, env=None, opts=None, update=None, name=None):
