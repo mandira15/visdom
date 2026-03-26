@@ -6,7 +6,11 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
-from xml.parsers.expat import model
+try:
+    import torch
+except ImportError:
+    torch = None
+
 
 from visdom.utils.shared_utils import get_new_window_id
 from visdom import server
@@ -1762,6 +1766,36 @@ class Visdom(object):
             endpoint = "update"
 
         return self._send(data_to_send, endpoint=endpoint)
+
+    def compute_gradient_l2_norm(model):
+    
+    # Compute the global L2 norm of all gradients in a PyTorch model.
+
+    # Args:
+    #     model (torch.nn.Module): Model whose gradients are computed.
+
+    # Returns:
+    #     float: L2 norm of gradients.
+    
+
+        if torch is None:
+            raise ImportError(
+                "PyTorch is required for compute_gradient_l2_norm but is not installed."
+            )
+
+        parameters = list(model.parameters())
+        if len(parameters) == 0:
+            return 0.0
+        
+        total_norm_sq = 0.0
+
+        for param in parameters:
+            if param.grad is not None:
+                param_norm = param.grad.detach().norm(2).item()
+                total_norm_sq += param_norm ** 2
+
+        total_norm = total_norm_sq ** 0.5
+        return float(total_norm)
 
     @pytorch_wrap
     def line(self, Y, X=None, win=None, env=None, opts=None, update=None, name=None):
